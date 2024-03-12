@@ -1,0 +1,119 @@
+import pandas as pd
+import numpy as np
+from google.colab import files
+import matplotlib.pyplot as plt
+from rdkit import Chem
+from rdkit.Chem import Draw
+from rdkit.Chem import AllChem
+import pandas as pd
+import numpy as np
+from rdkit import Chem
+from rdkit.Chem import AllChem
+from rdkit.Avalon import pyAvalonTools
+from rdkit.Chem import Descriptors
+from rdkit.Chem.Descriptors import ExactMolWt
+from rdkit.Chem.Descriptors import HeavyAtomMolWt
+from rdkit.Chem import Draw
+from PIL import Image
+import seaborn as sns
+import matplotlib.pyplot as plt
+from rdkit.Chem import MolToMolBlock
+from rdkit.Chem import MACCSkeys
+from rdkit.Chem import rdFingerprintGenerator
+from google.colab import files
+def tanimoto_Mh(vector_smiles, l, s, t, k):
+    tanimo = []
+    n = len(vector_smiles)
+    matriz = np.zeros((n, n))
+    for i in range(0, n):
+        for j in range(0, n):
+            smiles1 = vector_smiles[i]
+            smiles2 = vector_smiles[j]
+            mol1 = Chem.MolFromSmiles(smiles1)
+            mol2 = Chem.MolFromSmiles(smiles2)
+            if mol1 is not None and mol2 is not None:
+              if l == 0: #MorganFingerprint, la s dicta el orden del vector
+                tanimoto_value = AllChem.DataStructs.TanimotoSimilarity(
+                    AllChem.GetMorganFingerprint(mol1, s),
+                    AllChem.GetMorganFingerprint(mol2, s)
+                )
+                tanimo.append(tanimoto_value)
+                matriz[i, j] = tanimoto_value
+              elif l == 1: #bit-vector based
+                tanimoto_value = AllChem.DataStructs.TanimotoSimilarity(
+                    AllChem.GetHashedMorganFingerprint(mol1, s, 1024),
+                    AllChem.GetHashedMorganFingerprint(mol2, s, 1024)
+                )
+                tanimo.append(tanimoto_value)
+                matriz[i, j] = tanimoto_value
+              elif l == 2: #featMorgan
+                tanimoto_value = AllChem.DataStructs.TanimotoSimilarity(
+                    AllChem.GetMorganFingerprint(mol1, s, useFeatures=True),
+                    AllChem.GetMorganFingerprint(mol2, s, useFeatures=True)
+                )
+                tanimo.append(tanimoto_value)
+                matriz[i, j] = tanimoto_value
+              elif l == 3: #bitvectors
+                tanimoto_value = AllChem.DataStructs.TanimotoSimilarity(
+                    AllChem.GetHashedMorganFingerprint(mol1, s, 1024, useFeatures=True),
+                    AllChem.GetHashedMorganFingerprint(mol2, s, 1024, useFeatures=True)
+                )
+                tanimo.append(tanimoto_value)
+                matriz[i, j] = tanimoto_value
+              elif l == 4: #MACCS
+                tanimoto_value = AllChem.DataStructs.TanimotoSimilarity(
+                    AllChem.GetMACCSKeysFingerprint(mol1),
+                    AllChem.GetMACCSKeysFingerprint(mol2)
+                )
+                tanimo.append(tanimoto_value)
+                matriz[i, j] = tanimoto_value
+              elif l == 5: #RDKit por default
+                tanimoto_value = AllChem.DataStructs.TanimotoSimilarity(
+                    AllChem.RDKFingerprint(mol1, maxPath = t),
+                    AllChem.RDKFingerprint(mol2,maxPath = t)
+                )
+                tanimo.append(tanimoto_value)
+                matriz[i, j] = tanimoto_value
+              elif l == 6: #linear
+                tanimoto_value = AllChem.DataStructs.TanimotoSimilarity(
+                    AllChem.RDKFingerprint(mol1 ,maxPath= t,branchedPaths=False),
+                    AllChem.RDKFingerprint(mol2 ,maxPath= t,branchedPaths=False)
+                )
+                tanimo.append(tanimoto_value)
+                matriz[i, j] = tanimoto_value
+              elif l == 7: #atom_pairs
+                tanimoto_value = AllChem.DataStructs.TanimotoSimilarity(
+                    AllChem.GetAtomPairFingerprint(mol1),
+                    AllChem.GetAtomPairFingerprint(mol2)
+                )
+                tanimo.append(tanimoto_value)
+                matriz[i, j] = tanimoto_value
+              elif l == 8: #torsion topologica
+                tanimoto_value = AllChem.DataStructs.TanimotoSimilarity(
+                    AllChem.GetTopologicalTorsionFingerprint(mol1),
+                    AllChem.GetTopologicalTorsionFingerprint(mol2)
+                )
+                tanimo.append(tanimoto_value)
+                matriz[i, j] = tanimoto_value
+              elif l == 9: #bit vectors con torsión
+                tanimoto_value = AllChem.DataStructs.TanimotoSimilarity(
+                    AllChem.GetHashedTopologicalTorsionFingerprintAsBitVect(mol1),
+                    AllChem.GetHashedTopologicalTorsionFingerprintAsBitVect(mol2)
+                )
+                tanimo.append(tanimoto_value)
+                matriz[i, j] = tanimoto_value
+              elif l == 10: #Avalon
+                tanimoto_value = AllChem.DataStructs.TanimotoSimilarity(
+                    pyAvalonTools.GetAvalonFP(mol1, k),
+                    pyAvalonTools.GetAvalonFP(mol2, k)
+                )
+                tanimo.append(tanimoto_value)
+                matriz[i, j] = tanimoto_value
+              elif l == 11: #Avalon counts
+                tanimoto_value = AllChem.DataStructs.TanimotoSimilarity(
+                    pyAvalonTools.GetAvalonCountFP(mol1, k),
+                    pyAvalonTools.GetAvalonCountFP(mol2, k)
+                )
+                tanimo.append(tanimoto_value)
+                matriz[i, j] = tanimoto_value
+    return matriz
